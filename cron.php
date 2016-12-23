@@ -31,18 +31,29 @@ foreach ($achievments as $achievment)
             continue;
         }
 
-        $mailtext = $candidate['candidate_salutation']."\n\n".
-            ' du hast folgendes Achievment erreicht: '.
-            $achievment['achievment_name'].
-            "\n\nDein Fortschritt wurde gespeichert, gut gemacht!";
+        /**
+         * @var NotORM_Result $unlocked
+         */
+        $unlocked = $connection->unlocked_achievments();
+        $unlocked->where('id_achievment = ?', $achievment['id']);
+        $unlocked->where('id_candidate = ?', $candidate['id']);
 
-        echo $mailtext;
+        if ( empty($achievment['limit_earned']) || $achievment['limit_earned'] < count($unlocked) )
+        {
+            $mailtext = $candidate['candidate_salutation']."\n\n".
+                ' du hast folgendes Achievment erreicht: '.
+                $achievment['achievment_name'].
+                "\n\nDein Fortschritt wurde gespeichert, gut gemacht!";
 
-        $data = [
-            'id_achievment' => $achievment['id'],
-            'id_candidate'  => $candidate['id'],
-            'unlock_date'   => date("Y-m-d H:i:s")
-        ];
-        $connection->unlocked_achievments()->insert($data);
+            echo $mailtext;
+
+            $data = [
+                'id_achievment' => $achievment['id'],
+                'id_candidate'  => $candidate['id'],
+                'unlock_date'   => date("Y-m-d H:i:s")
+            ];
+            $connection->unlocked_achievments()->insert($data);
+        }
+
     }
 }
