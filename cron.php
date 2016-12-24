@@ -40,12 +40,12 @@ foreach ($achievments as $achievment)
 
         if ( empty($achievment['limit_earned']) || $achievment['limit_earned'] < count($unlocked) )
         {
-            $mailtext = $candidate['candidate_salutation']."\n\n".
+            $mailtext = $candidate['candidate_salutation']."\n\n".  //TODO: this will be replaced with templates from the db which math the users group
                 ' du hast folgendes Achievment erreicht: '.
                 $achievment['achievment_name'].
                 "\n\nDein Fortschritt wurde gespeichert, gut gemacht!";
 
-            echo $mailtext;
+            echo $mailtext;  //TODO: instead of echo the text will be mailed to the user
 
             $data = [
                 'id_achievment' => $achievment['id'],
