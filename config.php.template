@@ -4,3 +4,13 @@ define('DB_NAME', '');
 define('DB_PORT', '');
 define('DB_USER', '');
 define('DB_PASSWORD', '');
+
+define('SMTP_HOST', '');
+define('SMTP_AUTH', true);
+define('SMTP_USER', '');
+define('SMTP_PASS', '');
+define('SMTP_ENCR', '');
+define('SMTP_PORT', 25);
+define('SMTP_FROM', '');
+
+define('MAIL_SUBJECT', '');

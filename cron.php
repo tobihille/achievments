@@ -2,6 +2,7 @@
 
 require_once 'notorm/NotORM.php';
 require_once 'config.php';
+require_once 'PHPMailer/PHPMailerAutoload.php';
 
 $PDOconnection = new PDO("mysql:dbname=".DB_NAME, DB_USER, DB_PASSWORD);
 $connection = new NotORM($PDOconnection);
@@ -20,13 +21,17 @@ foreach ($achievments as $achievment)
         }
 
         $command = str_replace('{{user}}', $candidate['candidate_email'], $achievment['execute_command']);
-        if (empty($command)) {
+        $command = str_replace('{{workhour_start}}', $candidate['workhour_start'], $command);
+        $command = str_replace('{{workhour_end}}', $candidate['workhour_end'], $command);
+
+        if ( empty($command) )
+        {
             continue;
         }
 
         $result = shell_exec($command);
 
-        if (empty($result))
+        if ( empty($result) )
         {
             continue;
         }
@@ -40,12 +45,44 @@ foreach ($achievments as $achievment)
 
         if ( empty($achievment['limit_earned']) || $achievment['limit_earned'] < count($unlocked) )
         {
-            $mailtext = $candidate['candidate_salutation']."\n\n".  //TODO: this will be replaced with templates from the db which math the users group
-                ' du hast folgendes Achievment erreicht: '.
-                $achievment['achievment_name'].
-                "\n\nDein Fortschritt wurde gespeichert, gut gemacht!";
+            $mailtexts = $connection->templates()->where('candidate_team = ?', $candidate['candidate_team'] );
 
-            echo $mailtext;  //TODO: instead of echo the text will be mailed to the user
+            $text = '';
+            foreach ($mailtexts as $mailtext)
+            {
+                $mailtext = str_replace('{{salutation}}', $candidate['candidate_salutation'], $mailtext['template']);
+                $mailtext = str_replace('{{achievment_name}}', $achievment['achievment_name'], $mailtext);
+                $mailtext = str_replace('{{achievment_description}}', $achievment['achievment_description'], $mailtext);
+
+                $text .= $mailtext."\n<br/>";
+            }
+            $text = trim($text);
+
+            if (!$text)
+            {
+                error_log('Achievment unlocked but no message to send found, command: '.$command);
+                continue;
+            }
+
+            $mail = new PHPMailer();
+            $mail->isSMTP();
+            $mail->Host = SMTP_HOST;
+            $mail->SMTPAuth = SMTP_AUTH;
+            $mail->Username = SMTP_USER;
+            $mail->Password = SMTP_PASS;
+            $mail->SMTPSecure = SMTP_ENCR;
+            $mail->Port = SMTP_PORT;
+            $mail->setFrom(SMTP_FROM);
+            $mail->isHTML(true);
+            $mail->addAddress($candidate['candidate_email']);
+            $mail->Subject = MAIL_SUBJECT;
+            $mail->Body    = $text;
+            $mail->AltBody = strip_tags($text);
+
+            if (!$mail->send())
+            {
+                error_log('Mail could not be sent, command: '.$command.' Errormessage: '.$mail->ErrorInfo);
+            }
 
             $data = [
                 'id_achievment' => $achievment['id'],
