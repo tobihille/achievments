@@ -17,7 +17,7 @@ function doCheck($element)
     return $element[0] > 1000;
 }
 
-$counts = shell_exec('cd /var/www/html/dt && git shortlog -s -n -e --all | grep '.$user);
+$counts = shell_exec('git shortlog -s -n -e --all | grep '.$user);
 
 $counts = explode("\n", $counts);
 $counts = array_map('trim', $counts);
